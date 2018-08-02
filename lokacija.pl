@@ -1,0 +1,35 @@
+lokacija(a1).
+lokacija(a2).
+lokacija(a3).
+lokacija(a4).
+lokacija(a5).
+lokacija(b1).
+lokacija(b2).
+lokacija(b3).
+lokacija(b4).
+lokacija(b5).
+lokacija(c1).
+lokacija(c2).
+lokacija(c3).
+lokacija(c4).
+lokacija(c5).
+lokacija(d1).
+lokacija(d2).
+lokacija(d3).
+lokacija(d4).
+lokacija(d5).
+lokacija(e1).
+lokacija(e2).
+lokacija(e3).
+lokacija(e4).
+lokacija(e5).
+tramvaj(c1,c2).
+tramvaj(c2,c3).
+tramvaj(c3,c4).
+tramvaj(c4,c5).
+tramvaj(c5,c4).
+tramvaj(c4,c3).
+tramvaj(c3,c2).
+tramvaj(c2,c1).
+(tramvaj_relacija(X,Y) :- tramvaj(X,Y)).
+(tramvaj_relacija(X,Y) :- tramvaj(X,Z), tramvaj_relacija(Z,Y)).
