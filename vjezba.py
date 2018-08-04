@@ -9,6 +9,7 @@ from spade.Behaviour import *
 from spade.AID import *
 from spade.ACLMessage import ACLMessage
 from time import sleep
+from datetime import datetime, timedelta
 import operator
 """
 agent = BDIAgent("novi@127.0.0.1","tajna")
@@ -73,11 +74,47 @@ class Vjezba( BDIAgent ):
 			loc = 'osoba_lokacija( %s )' % (self.myAgent.lokacija)
 			self.myAgent.addBelieve(loc)
 
+			odabraniDogadjaj = 'c1'
+			pjesiceUkupnoTrajanje = self.myAgent.putDoLokacije( self.myAgent.lokacija, odabraniDogadjaj )
+
+			uTramvaju = abs(int(self.myAgent.lokacija[1]) - int(odabraniDogadjaj[1]))
+			dolazak = datetime.now() + timedelta( minutes = pjesiceUkupnoTrajanje )		
+
+			print '\nUPUTE DO LOKACIJE: %s <PJESICE>'% (odabraniDogadjaj)
+			print '-------------------------------'
+			print 'Do dogadjaja je pjesice jos: [%s min]'% (pjesiceUkupnoTrajanje)	
+			print 'DOLAZAK: %s:%s '% (dolazak.hour, dolazak.minute)	
+
+			if uTramvaju > 0:
+				odTramvaj = 'c' + self.myAgent.lokacija[1]			
+				doTramvaj = 'c' + odabraniDogadjaj[1]
+				pjesiceTramvaj = 1
+				tramvajPjesice = 1
+
+				if odTramvaj != self.myAgent.lokacija:
+					pjesiceTramvaj = self.myAgent.putDoLokacije( self.myAgent.lokacija, odTramvaj )
+
+				if doTramvaj != odabraniDogadjaj:
+					tramvajPjesice = self.myAgent.putDoLokacije( doTramvaj, odabraniDogadjaj )			
+
+				tramvajUkupnoTrajanje = pjesiceTramvaj + uTramvaju + tramvajPjesice
+				dolazak = datetime.now() + timedelta( minutes = tramvajUkupnoTrajanje )
+
+				print '\nUPUTE DO LOKACIJE: %s <TRAMVAJ>'% (odabraniDogadjaj)
+				print '-------------------------------'
+				print 'Najblize stajaliste tramvaja: %s [%s min]'% (odTramvaj, pjesiceTramvaj)
+				print 'Izlaz iz tramvaja: %s'% (doTramvaj)
+				print 'Putovanje tramvajem: [%s min]'% (uTramvaju)
+				print 'Do dogadjaja je pjesice jos: [%s min]'% (tramvajPjesice)	
+				print 'Ukupno trajanje putovanja: [%s min]'%(tramvajUkupnoTrajanje)
+				print 'DOLAZAK: %s:%s '% (dolazak.hour, dolazak.minute)			
+			
+
 	class porukeDogadjaja(EventBehaviour):		
 		def _process(self):
 			self.msg = None
 			self.msg = self._receive(True)
-			self.dogadjaj = None
+			#self.dogadjaj = None
 			#sleep(1)
 			if self.msg:
 				print self.msg.content
@@ -90,7 +127,7 @@ class Vjezba( BDIAgent ):
 		def _process(self):
 			self.msg = None
 			self.msg = self._receive(True)
-			self.dogadjaj = None
+			self.stajaliste = None
 			#sleep(1)
 			if self.msg:
 				print self.msg.content
@@ -128,8 +165,6 @@ class Vjezba( BDIAgent ):
 		p4 = self.porukeTramvaj()		
 		self.addBehaviour(p4,tt)
 
-		self.putDoLokacije('c3', 'd1')				
-
 	def ucitajZnanje(self,datoteka):
 		znanje = []
 		with open(datoteka, 'r') as f:
@@ -140,6 +175,8 @@ class Vjezba( BDIAgent ):
 
 	def putDoLokacije(self, od, do):
 		#x = od
+		uzduz = 10
+		poprijeko = 15
 		y = od
 		op_oznaka = ops["-"]
 		op_index = ops["-"]
@@ -155,13 +192,9 @@ class Vjezba( BDIAgent ):
 		elif(oznaka < 0) and (index > 0):#desno gore
 			op_oznaka = ops["+"]
 
-		print op_oznaka(0,1)
-		print op_index(0,1)	
-
 		oznaka = abs(oznaka)
 		index = abs(index)
-		udaljenost1 = (oznaka + index) * 8
-		print 'Udaljenost pješice: %s'% (udaljenost1)
+		udaljenost1 = (oznaka + index) * uzduz
 
 		udaljenost2 = 0
 		
@@ -175,21 +208,19 @@ class Vjezba( BDIAgent ):
 			y = str(unichr(y))
 			pom = op_index(pom, 1) 
 			y = y + str(pom)
-			print y
 			sleep(1)
-			udaljenost2 += 10			
+			udaljenost2 += poprijeko			
 
 		oznaka = abs(int(ord(y[0]) - ord(do[0])))
 		index = abs( int(y[1]) - int(do[1]) )
-		udaljenost2 += (oznaka + index) * 8
+		udaljenost2 += (oznaka + index) * uzduz
 
 		udaljenost = None
 
 		if (udaljenost1 < udaljenost2) or (udaljenost2 == 0):
 			udaljenost = udaljenost1
 		else: udaljenost = udaljenost2
-
-		print 'Udaljenost pješice: %s'% (udaljenost) 
+		return udaljenost
 		 	 
 		
 		#while y[0] != 'c':
