@@ -13,15 +13,17 @@ from time import sleep
 class AgentTramvaj(Agent):
 	class PocetnoStajaliste(OneShotBehaviour):
 		def _process(self):
-			sleep( 10 )
 			print self.myAgent.stajaliste._actualState
+			sleep( 60 )
 			self._exitcode = self.myAgent.PRIJELAZ_POCETNO_U_DRUGO
-			self.myAgent.povratak = 0
+			if self.myAgent.povratak == 1:
+				self.myAgent.povratak = 0
+			
 
 	class DrugoStajaliste(OneShotBehaviour):
 		def _process(self):
-			sleep( 10 )
-			print self.myAgent.stajaliste._actualState
+			print "" + self.myAgent.stajaliste._actualState
+			sleep( 60 )			
 			if self.myAgent.povratak == 0:				
 				self._exitcode = self.myAgent.PRIJELAZ_DRUGO_U_TRECE
 			elif self.myAgent.povratak == 1:
@@ -29,8 +31,8 @@ class AgentTramvaj(Agent):
 
 	class TreceStajaliste(OneShotBehaviour):
 		def _process(self):
-			sleep( 10 )
 			print self.myAgent.stajaliste._actualState
+			sleep( 60 )			
 			if self.myAgent.povratak == 0:				
 				self._exitcode = self.myAgent.PRIJELAZ_TRECE_U_CETVRTO
 			elif self.myAgent.povratak == 1:
@@ -38,8 +40,8 @@ class AgentTramvaj(Agent):
 
 	class CetvrtoStajaliste(OneShotBehaviour):
 		def _process(self):
-			sleep( 10 )
 			print self.myAgent.stajaliste._actualState
+			sleep( 60 )			
 			if self.myAgent.povratak == 0:				
 				self._exitcode = self.myAgent.PRIJELAZ_CETVRTO_U_PETO
 			elif self.myAgent.povratak == 1:
@@ -48,29 +50,33 @@ class AgentTramvaj(Agent):
 
 	class PetoStajaliste(OneShotBehaviour):
 		def _process(self):
-			sleep( 10 )
 			print self.myAgent.stajaliste._actualState
+			sleep( 60 )			
 			self.myAgent.povratak = 1
 			self._exitcode = self.myAgent.PRIJELAZ_PETO_U_CETVRTO
 
 	class ZavrsnoStajaliste(OneShotBehaviour):
 		def _process(self):
-			sleep( 10 )
 			print 'kraj'
 			self.myAgent._kill()
 
-	class PosaljiLokaciju(PeriodicBehaviour):
-		def _onTick(self):
-			primatelj = AID.aid(name="osoba@127.0.0.1", addresses=["xmpp://osoba@127.0.0.1"])
+	class porukeInfoPult(EventBehaviour):		
+		def _process(self):
+			self.msg = None
+			self.msg = self._receive(True)
+			if self.msg:
+				primatelj = AID.aid(name="infopult@127.0.0.1", addresses=["xmpp://infopult@127.0.0.1"])
 				
-			sadrzaj = self.myAgent.stajaliste._actualState
-				
-			self.msg = ACLMessage()
-			self.msg.setPerformative('inform')
-			self.msg.setOntology('tramvaj')				
-			self.msg.setContent(sadrzaj)
-			self.msg.addReceiver(primatelj)
-			self.myAgent.send(self.msg)	
+				sadrzaj = '%s,%s'% ( self.myAgent.stajaliste._actualState, self.myAgent.povratak )
+					
+				self.msg = ACLMessage()
+				self.msg.setPerformative('inform')
+				self.msg.setOntology('tramvaj')				
+				self.msg.setContent(sadrzaj)
+				self.msg.addReceiver(primatelj)
+				self.myAgent.send(self.msg)
+			else:
+				print "poruka nije dobivena"
 			
 
 	def _setup(self):
@@ -115,11 +121,13 @@ class AgentTramvaj(Agent):
 		self.stajaliste = p			
 
 		template = ACLTemplate()
-		template.setOntology('tramvaj')
-		tt = MessageTemplate(template)
+		template.setOntology('infopult')
+		ipt = MessageTemplate(template)
 
-		p3 = self.PosaljiLokaciju(10)
-		self.addBehaviour(p3, None)
+		p3 = self.porukeInfoPult()
+		self.addBehaviour(p3, ipt)
+
+
 
 
 if __name__ == '__main__':

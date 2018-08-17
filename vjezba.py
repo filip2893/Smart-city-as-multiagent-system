@@ -11,115 +11,108 @@ from spade.ACLMessage import ACLMessage
 from time import sleep
 from datetime import datetime, timedelta
 import operator
-"""
-agent = BDIAgent("novi@127.0.0.1","tajna")
-#agent.setDebugToScreen()
-agent.configureKB("SWI", None, "/usr/bin/swipl")
-agent.addBelieve( 'a(b,c)' )	
-agent.addBelieve( 'a(c,d)' )
-bel = agent.askBelieve( 'a(b,c)' )
-print bel
-
-def ucitajZnanje(datoteka):
-	znanje = set()
-	with open(datoteka, 'r') as f:
-		for red in f:
-			red = red.strip()
-			znanje.add(red[:-1])
-	return znanje
-
-znanje = ucitajZnanje('proba.pl')
-for z in znanje:
-	print z
-	agent.addBelieve( z )	 
-
-#x = 'a(d)'
-#agent.addBelieve( x )
-bel = agent.askBelieve( 'p(X,Y)' )
-print bel
-agent.start()
-agent._kill()
-"""
+import sys
 
 ops = {"+": operator.add,
 	   "-": operator.sub}
 
-class Vjezba( BDIAgent ):		
-	class usluga1(Service):
-		inputs = {}
-		outputs = {}
-		def run(self):
-			print "Pokrecem uslugu 1"
-			self.addBelieve('a(c)')
+class infoPult( BDIAgent ):
+	class glavno(TimeOutBehaviour):			
+		def _process(self):	
+			print '\nIZBORNIK'
+			print '--------'
+			print 'karta[0]'
+			print 'dogadjaji[1]'
+			print 'put do lokacije[2]'
+			print '------------------'
+			self.izbor = raw_input("\nVas odabir: ")
+			print self.izbor
+			if self.izbor == '0':
+				self.myAgent.ucitajDatoteku("karta.txt")
+				print "\nVAŠA LOKACIJA: %s"%( self.myAgent.infoPultLokacija )
 
-	class usluga2(Service):
-		inputs = {}
-		outputs = {}
-		def run(self):
-			print "Pokrecem uslugu 2"
-			self.addBelieve('a(d)')
+			elif self.izbor == '1':
+				self.myAgent.ucitajDatoteku("dogadjaji.txt")
 
-	class odaberi(Behaviour):		
-		def onStart(self):
-			ispravno = False
-			self.myAgent.lokacija = None
-			while ispravno == False:
-				pass
-				self.myAgent.lokacija = raw_input("Vaša lokacija(a-e)(1-5):")		
-				loc = 'lokacija(%s)' % (self.myAgent.lokacija)		
-				ispravno = self.myAgent.askBelieve(loc)
-				if ispravno == False:
-					print 'NEISPRAVAN UNOS'
+			elif self.izbor == '2':
+				ispravno = False
+				lokacija = None
+				while ispravno == False:
+					pass
+					lokacija = raw_input("\nZeljena lokacija: ")		
+					loc = 'lokacija(%s)' % (lokacija)		
+					ispravno = self.myAgent.askBelieve(loc)
+					if ispravno == False:
+						print 'DOZVOLJENI UNOS (a-e)(1-5)'
 
-			loc = 'osoba_lokacija( %s )' % (self.myAgent.lokacija)
-			self.myAgent.addBelieve(loc)
+				self.myAgent.lokacija = lokacija
+					#loc = 'zeljena_lokacija( %s )' % (self.myAgent.lokacija)
+					#self.myAgent.addBelieve(loc)			
 
-			odabraniDogadjaj = 'c1'
-			pjesiceUkupnoTrajanje = self.myAgent.putDoLokacije( self.myAgent.lokacija, odabraniDogadjaj )
+				uTramvaju = abs(int(self.myAgent.infoPultLokacija[1]) - int(self.myAgent.lokacija[1]))
 
-			uTramvaju = abs(int(self.myAgent.lokacija[1]) - int(odabraniDogadjaj[1]))
-			dolazak = datetime.now() + timedelta( minutes = pjesiceUkupnoTrajanje )		
+				self.pjesiceUkupnoTrajanje = self.myAgent.putDoLokacije( self.myAgent.infoPultLokacija, self.myAgent.lokacija )
+				self.dolazak = datetime.now() + timedelta( minutes = self.pjesiceUkupnoTrajanje )	
 
-			print '\nUPUTE DO LOKACIJE: %s <PJESICE>'% (odabraniDogadjaj)
-			print '-------------------------------'
-			print 'Do dogadjaja je pjesice jos: [%s min]'% (pjesiceUkupnoTrajanje)	
-			print 'DOLAZAK: %s:%s '% (dolazak.hour, dolazak.minute)	
-
-			if uTramvaju > 0:
-				odTramvaj = 'c' + self.myAgent.lokacija[1]			
-				doTramvaj = 'c' + odabraniDogadjaj[1]
-				pjesiceTramvaj = 1
-				tramvajPjesice = 1
-
-				if odTramvaj != self.myAgent.lokacija:
-					pjesiceTramvaj = self.myAgent.putDoLokacije( self.myAgent.lokacija, odTramvaj )
-
-				if doTramvaj != odabraniDogadjaj:
-					tramvajPjesice = self.myAgent.putDoLokacije( doTramvaj, odabraniDogadjaj )			
-
-				tramvajUkupnoTrajanje = pjesiceTramvaj + uTramvaju + tramvajPjesice
-				dolazak = datetime.now() + timedelta( minutes = tramvajUkupnoTrajanje )
-
-				print '\nUPUTE DO LOKACIJE: %s <TRAMVAJ>'% (odabraniDogadjaj)
+				print '\nUPUTE DO LOKACIJE: %s <PJESICE>'% ( self.myAgent.lokacija )
 				print '-------------------------------'
-				print 'Najblize stajaliste tramvaja: %s [%s min]'% (odTramvaj, pjesiceTramvaj)
-				print 'Izlaz iz tramvaja: %s'% (doTramvaj)
-				print 'Putovanje tramvajem: [%s min]'% (uTramvaju)
-				print 'Do dogadjaja je pjesice jos: [%s min]'% (tramvajPjesice)	
-				print 'Ukupno trajanje putovanja: [%s min]'%(tramvajUkupnoTrajanje)
-				print 'DOLAZAK: %s:%s '% (dolazak.hour, dolazak.minute)			
-			
+				print 'Do dogadjaja je pjesice jos: [%s min]'% (self.pjesiceUkupnoTrajanje)	
+				print 'DOLAZAK: %s:%s '% (self.dolazak.hour, self.dolazak.minute)
+				
+				if uTramvaju > 0:
+					self.odTramvaj = 'c' + self.myAgent.infoPultLokacija[1]			
+					self.doTramvaj = 'c' + self.myAgent.lokacija[1]
+					self.polazakTramvaja = self.myAgent.vrijemeDolaskaTramvaja( self.odTramvaj,
+																self.myAgent.stajaliste, 
+																self.myAgent.relacija )
 
+					self.uTramvaju = self.myAgent.vrijemeDolaskaTramvaja( self.doTramvaj,
+																self.odTramvaj, 
+																self.myAgent.relacija )
+							
+					self.pjesiceTramvaj = 1
+					self.tramvajPjesice = 1
+
+					if self.odTramvaj != self.myAgent.infoPultLokacija:
+						self.pjesiceTramvaj = self.myAgent.putDoLokacije( self.myAgent.infoPultLokacija, self.odTramvaj )
+
+					if self.uTramvaju > 4:
+						self.polazakTramvaja += (self.uTramvaju - 4)
+						self.uTramvaju -=  4	
+
+					self._polazakTramvaja = self.polazakTramvaja
+
+					while self.polazakTramvaja < self.pjesiceTramvaj:
+						self.polazakTramvaja += self._polazakTramvaja
+
+					if self.doTramvaj != self.myAgent.lokacija:
+						self.tramvajPjesice = self.myAgent.putDoLokacije( self.doTramvaj, self.myAgent.lokacija )			
+
+					self.tramvajUkupnoTrajanje = self.polazakTramvaja + self.uTramvaju + self.tramvajPjesice
+					
+					self._polazakTramvaja = datetime.now() + timedelta( minutes = self.polazakTramvaja )
+					self.dolazak = datetime.now() + timedelta( minutes = self.tramvajUkupnoTrajanje )
+
+					print '\nUPUTE DO LOKACIJE: %s <TRAMVAJ>'% (self.myAgent.lokacija)
+					print '-------------------------------'
+					print '#TRENUTNO stajaliste tramvaja: %s'% (self.myAgent.stajaliste)
+					print 'NAJBLIZE stajaliste tramvaja: %s [%s min]'% (self.odTramvaj, self.pjesiceTramvaj)
+					print 'Izlaz iz tramvaja: %s'% (self.doTramvaj)
+					print 'Dolazak tramvaja u: %s:%s za[%s min]'% (self._polazakTramvaja.hour, self._polazakTramvaja.minute, self.polazakTramvaja)
+					print 'Putovanje tramvajem: [%s min]'% (self.uTramvaju)
+					print 'Do dogadjaja je pjesice jos: [%s min]'% (self.tramvajPjesice)	
+					print 'Ukupno trajanje putovanja: [%s min]'%(self.tramvajUkupnoTrajanje)
+					print 'DOLAZAK NA ZELJENU LOKACIJU: %s:%s '% (self.dolazak.hour, self.dolazak.minute)
+
+			else: print 'KRIVI UNOS\n'
+	
 	class porukeDogadjaja(EventBehaviour):		
 		def _process(self):
 			self.msg = None
 			self.msg = self._receive(True)
-			#self.dogadjaj = None
-			#sleep(1)
 			if self.msg:
-				print self.msg.content
-				#self.dogadjaj = self.msg.content
-				#self.izracunajUdaljenost()
+				with open("dogadjaji.txt", "a") as dogadjaji:
+					dogadjaji.write( self.msg.content )
 			else:
 				print "poruka nije dobivena"
 
@@ -127,20 +120,20 @@ class Vjezba( BDIAgent ):
 		def _process(self):
 			self.msg = None
 			self.msg = self._receive(True)
-			self.stajaliste = None
-			#sleep(1)
 			if self.msg:
-				print self.msg.content
-				#self.dogadjaj = self.msg.content
-				#self.izracunajUdaljenost()
+				lista = self.msg.content.split( ',' )
+				self.myAgent.stajaliste = lista[ 0 ]
+				self.myAgent.relacija = lista[ 1 ]
+				#print self.myAgent.stajaliste
+				#print self.myAgent.relacija
 			else:
 				print "poruka nije dobivena"
-			#trajanjeSlovo = ord(self.myAgent.lokacija[0] - self.myAgent.dogadjaj[0])
-			#if self.myAgent.dogadjaj != None:
-			#	print "trajanjeSlovo"
 			
 	def _setup( self ):
-		p1 = self.odaberi() 
+		loc = 'osoba_lokacija( %s )' % (self.infoPultLokacija)
+		self.addBelieve(loc)
+
+		p1 = self.glavno(2) 
 		self.addBehaviour(p1,None)		
 
 		self.configureKB("SWI", None, "/usr/bin/swipl")		
@@ -148,8 +141,8 @@ class Vjezba( BDIAgent ):
 		for z in self.znanje:
 			#print z
 			self.addBelieve( z )
-		bel = self.askBelieve( 'tramvaj_relacija(a1,d4)' )
-		print bel
+		#bel = self.askBelieve( 'tramvaj_relacija(a1,d4)' )
+		#print bel
 
 		template = ACLTemplate()
 		template.setOntology('dogadjaj')
@@ -162,8 +155,8 @@ class Vjezba( BDIAgent ):
 		template.setOntology('tramvaj')
 		tt = MessageTemplate(template)
 
-		p4 = self.porukeTramvaj()		
-		self.addBehaviour(p4,tt)
+		p3 = self.porukeTramvaj()		
+		self.addBehaviour(p3,tt)		
 
 	def ucitajZnanje(self,datoteka):
 		znanje = []
@@ -173,8 +166,46 @@ class Vjezba( BDIAgent ):
 				znanje.append(red[:-1])
 		return znanje
 
+	def ucitajDatoteku( self,datoteka ):
+		if datoteka == "dogadjaji.txt":
+			print "\n------------"
+			print "|DOGADJAJI:|"
+			print "------------"
+		elif datoteka == "karta.txt":
+			print "\n#############"
+			print "KARTA GRADA:#"
+			print "#############"
+
+		brojac = 0
+
+		with open( datoteka, 'r') as f:
+				for red in f:
+					brojac += 1
+					red = red.strip()				
+					print red
+					if brojac == 6:
+						print "---------------"
+						brojac = 0
+
+	def vrijemeDolaskaTramvaja(self, stajaliste, dolazak, relacija):		
+		op_index = ops["+"]
+		if relacija == 1:
+			op_index = ops["-"]
+
+		trajanje = 0
+
+		while stajaliste != dolazak:			
+			index = op_index( int( dolazak[1]), 1 ) 
+			dolazak = dolazak[0] + str(index)
+			#print dolazak
+			trajanje += 1
+			if index == 5:
+				op_index = ops["-"]
+			elif index == 1:
+				op_index = ops["+"]
+		return trajanje
+
 	def putDoLokacije(self, od, do):
-		#x = od
 		uzduz = 10
 		poprijeko = 15
 		y = od
@@ -220,33 +251,9 @@ class Vjezba( BDIAgent ):
 		if (udaljenost1 < udaljenost2) or (udaljenost2 == 0):
 			udaljenost = udaljenost1
 		else: udaljenost = udaljenost2
-		return udaljenost
-		 	 
-		
-		#while y[0] != 'c':
-		#	y = int(ord(y[0]) + 1)
-		#	y = str(unichr(y)) + '1'
-		#	print '(x,y) = (' + x + ', ' + y + ')'
-		#	#self.addBelieve()
-		#	x = y		
-		#	sleep(1)
-
-	
-"""
-	def planiraj(self):
-		self.plans = []
-		self.goals = []
-		s1 = Service(name="s1", owner=self.getAID(), inputs = {}, outputs = {}, P=expr('a(b)'), Q=expr('a(c)'))#self.usluga1(P=expr('a(b)'), Q=expr('a(c)'))
-		self.registerService(s1)
-		s2 = self.usluga2(P=expr('a(c)'), Q=expr('a(d)'))
-		self.registerService(s1, self.usluga1)
-		self.addPlan(P=expr('a(b)'), Q=expr('a(d)'), services=["s1","s2"])	 
-		self.addGoal(Goal(expr('a(d)')))           
-"""
-	
+		return udaljenost	
 
 if __name__ == '__main__':
-	agent = Vjezba( "osoba@127.0.0.1", "tajna" )
-	#agent.setDebugToScreen()
+	agent = infoPult( "infoPult@127.0.0.1", "tajna" )
+	agent.infoPultLokacija = sys.argv[ 1 ] 
 	agent.start()
-	#agent._kill()

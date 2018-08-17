@@ -11,47 +11,63 @@ from spade.ACLMessage import ACLMessage
 from datetime import datetime, timedelta
 from time import sleep
 
-class Event( Agent ):
-	class proba(OneShotBehaviour):	
-		def _process(self):	
-			#if self.myAgent.dogadjaj['kraj'] > datetime.now():
-				
-				primatelj = AID.aid(name="osoba@127.0.0.1", addresses=["xmpp://osoba@127.0.0.1"])
-				
-				sadrzaj = self.myAgent.dogadjaj['lokacija']
-				
-				self.msg = ACLMessage()
-				self.msg.setPerformative('inform')
-				self.msg.setOntology('dogadjaj')				
-				self.msg.setContent(sadrzaj)
-				self.msg.addReceiver(primatelj)
-				self.myAgent.send(self.msg)
+class Event( BDIAgent ):
+	class noviDogadjaj(Behaviour):	
+		def _process(self):
+			ispravno = False
+			self.myAgent.dogadjaj = {}
+			self.myAgent.dogadjaj['naziv'] = raw_input("Naziv:")
+			self.myAgent.dogadjaj['tip'] = raw_input("Vrsta:")
+			self.myAgent.dogadjaj['pocetak'] = datetime.strptime(raw_input("Datum i vrijeme početka(d.m.y. h:m):"), '%d.%m.%Y. %H:%M')
+			self.myAgent.dogadjaj['kraj'] = datetime.strptime(raw_input("Datum i vrijeme kraja(d.m.y. h:m):"), '%d.%m.%Y. %H:%M')
+			self.myAgent.dogadjaj['cijena'] = raw_input("Cijena:")
+			while ispravno == False:
+				self.myAgent.dogadjaj['lokacija'] = raw_input("Lokacija:")
+				loc = 'lokacija(%s)' % ( self.myAgent.dogadjaj['lokacija'] )		
+				ispravno = self.myAgent.askBelieve(loc)
+				if ispravno == False:
+					print 'DOZVOLJENI UNOS (a-e)(1-5)'	
 
-				#print "dobro došli"
-			#else:
-				#print "svemu je kraj"
+			if self.myAgent.dogadjaj['kraj'] > datetime.now():
+				self.myAgent.addBehaviour(posaljiDogadjaj(), None)
+			else:
+				print"\nDogadjaj je zavrsio\n"
+
+	class posaljiDogadjaj(OneShotBehaviour):	
+		def _process(self):
+			primatelj = AID.aid(name="infoPult@127.0.0.1", addresses=["xmpp://infoPult@127.0.0.1"])
+				
+			sadrzaj = "naziv=%s"%(self.myAgent.dogadjaj['naziv'])
+			sadrzaj += "tip=%s"%(self.myAgent.dogadjaj['tip'])
+			sadrzaj += "pocetak=%s"%(self.myAgent.dogadjaj['pocetak'])
+			sadrzaj += "kraj=%s"%(self.myAgent.dogadjaj['kraj'])
+			sadrzaj += "cijena=%s"%(self.myAgent.dogadjaj['cijena'])
+			sadrzaj += "lokacija=%s\n"%(self.myAgent.dogadjaj['lokacija'])
+			
+			self.msg = ACLMessage()
+			self.msg.setPerformative('inform')
+			self.msg.setOntology('dogadjaj')				
+			self.msg.setContent(sadrzaj)
+			self.msg.addReceiver(primatelj)
+			self.myAgent.send(self.msg)
+			print "\nDogadjaj uspjesno dodan\n"
 			
 	def _setup( self ):
-		self.dogadjaj = {}
-		self.dogadjaj = self.noviDogadjaj()
+		self.configureKB("SWI", None, "/usr/bin/swipl")		
+		self.znanje = self.ucitajZnanje('lokacija.pl')
+		for z in self.znanje:
+			self.addBelieve( z )
 
-		lokacija = self.dogadjaj['lokacija']
-		print lokacija[0]
-		print ord('a')
-
-		p = self.proba()
+		p = self.noviDogadjaj()
 		self.addBehaviour(p, None)
 
-	def noviDogadjaj(self):
-		dogadjaj = {}
-		#dogadjaj['naziv'] = raw_input("Naziv:")
-		#dogadjaj['tip'] = raw_input("Vrsta:")
-		#dogadjaj['pocetak'] = datetime.strptime(raw_input("Datum i vrijeme početka(d.m.y. h:m):"), '%d.%m.%Y. %H:%M')
-		#dogadjaj['kraj'] = datetime.strptime(raw_input("Datum i vrijeme kraja(d.m.y. h:m):"), '%d.%m.%Y. %H:%M')
-		#dogadjaj['cijena'] = raw_input("Cijena:")
-		dogadjaj['lokacija'] = raw_input("Lokacija(a-f)(1-6):")	
-		#dogadjaj['max'] = raw_input("Max broj ljudi:")		
-		return dogadjaj
+	def ucitajZnanje(self,datoteka):
+		znanje = []
+		with open(datoteka, 'r') as f:
+			for red in f:
+				red = red.strip()				
+				znanje.append(red[:-1])
+		return znanje
 
 if __name__ == '__main__':
 	agent = Event( "event@127.0.0.1", "tajna" )
