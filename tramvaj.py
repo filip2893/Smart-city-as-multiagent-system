@@ -12,48 +12,81 @@ from time import sleep
 
 class AgentTramvaj(Agent):
 	class PocetnoStajaliste(OneShotBehaviour):
-		def _process(self):
+		def _process( self ):
 			print self.myAgent.stajaliste._actualState
-			sleep( 60 )
-			self._exitcode = self.myAgent.PRIJELAZ_POCETNO_U_DRUGO
-			if self.myAgent.povratak == 1:
-				self.myAgent.povratak = 0
-			
+			sleep( 1 )
+			self.myAgent.brojac = self.myAgent.brojac + 1
+			if self.myAgent.kraj == True:
+				self._exitcode = self.myAgent.PRIJELAZ_U_ZAVRSNO
+			elif self.myAgent.brojac < 5:
+				self._exitcode = self.myAgent.PRIJELAZ_PRETPOSTAVLJENI
+			elif self.myAgent.kraj == False:
+				self.myAgent.brojac = 0
+				self._exitcode = self.myAgent.PRIJELAZ_POCETNO_U_DRUGO
+				
 
 	class DrugoStajaliste(OneShotBehaviour):
 		def _process(self):
 			print "" + self.myAgent.stajaliste._actualState
-			sleep( 60 )			
-			if self.myAgent.povratak == 0:				
+			sleep( 1 )
+			self.myAgent.brojac = self.myAgent.brojac + 1
+			if self.myAgent.kraj == True:
+				self._exitcode = self.myAgent.PRIJELAZ_U_ZAVRSNO
+			elif self.myAgent.brojac < 5:
+				self._exitcode = self.myAgent.PRIJELAZ_PRETPOSTAVLJENI			
+			elif self.myAgent.povratak == 0:
+				self.myAgent.brojac = 0				
 				self._exitcode = self.myAgent.PRIJELAZ_DRUGO_U_TRECE
 			elif self.myAgent.povratak == 1:
+				self.myAgent.brojac = 0
 				self._exitcode = self.myAgent.PRIJELAZ_DRUGO_U_POCETNO
 
 	class TreceStajaliste(OneShotBehaviour):
 		def _process(self):
 			print self.myAgent.stajaliste._actualState
-			sleep( 60 )			
-			if self.myAgent.povratak == 0:				
+			sleep( 1 )	
+			self.myAgent.brojac = self.myAgent.brojac + 1
+			if self.myAgent.kraj == True:
+				self._exitcode = self.myAgent.PRIJELAZ_U_ZAVRSNO
+			elif self.myAgent.brojac < 5:
+				self._exitcode = self.myAgent.PRIJELAZ_PRETPOSTAVLJENI		
+			elif self.myAgent.povratak == 0:
+				self.myAgent.brojac = 0				
 				self._exitcode = self.myAgent.PRIJELAZ_TRECE_U_CETVRTO
 			elif self.myAgent.povratak == 1:
+				self.myAgent.brojac = 0
 				self._exitcode = self.myAgent.PRIJELAZ_TRECE_U_DRUGO
 
 	class CetvrtoStajaliste(OneShotBehaviour):
 		def _process(self):
 			print self.myAgent.stajaliste._actualState
-			sleep( 60 )			
-			if self.myAgent.povratak == 0:				
+			sleep( 1 )		
+			self.myAgent.brojac = self.myAgent.brojac + 1
+			if self.myAgent.kraj == True:
+				self._exitcode = self.myAgent.PRIJELAZ_U_ZAVRSNO
+			elif self.myAgent.brojac < 5:
+				self._exitcode = self.myAgent.PRIJELAZ_PRETPOSTAVLJENI	
+			elif self.myAgent.povratak == 0:
+				self.myAgent.brojac = 0				
 				self._exitcode = self.myAgent.PRIJELAZ_CETVRTO_U_PETO
 			elif self.myAgent.povratak == 1:
+				self.myAgent.brojac = 0
 				self._exitcode = self.myAgent.PRIJELAZ_CETVRTO_U_TRECE
 
 
 	class PetoStajaliste(OneShotBehaviour):
 		def _process(self):
 			print self.myAgent.stajaliste._actualState
-			sleep( 60 )			
-			self.myAgent.povratak = 1
-			self._exitcode = self.myAgent.PRIJELAZ_PETO_U_CETVRTO
+			sleep( 1 )	
+			self.myAgent.brojac = self.myAgent.brojac + 1
+			if self.myAgent.kraj == True:
+				self._exitcode = self.myAgent.PRIJELAZ_U_ZAVRSNO
+			elif self.myAgent.brojac < 5:
+				self._exitcode = self.myAgent.PRIJELAZ_PRETPOSTAVLJENI	
+			elif self.myAgent.povratak == 0:
+				self.myAgent.brojac = 0		
+				self.myAgent.povratak = 1
+				self._exitcode = self.myAgent.PRIJELAZ_PETO_U_CETVRTO
 
 	class ZavrsnoStajaliste(OneShotBehaviour):
 		def _process(self):
@@ -65,22 +98,25 @@ class AgentTramvaj(Agent):
 			self.msg = None
 			self.msg = self._receive(True)
 			if self.msg:
-				primatelj = AID.aid(name="infopult@127.0.0.1", addresses=["xmpp://infopult@127.0.0.1"])
-				
-				sadrzaj = '%s,%s'% ( self.myAgent.stajaliste._actualState, self.myAgent.povratak )
-					
-				self.msg = ACLMessage()
-				self.msg.setPerformative('inform')
-				self.msg.setOntology('tramvaj')				
-				self.msg.setContent(sadrzaj)
-				self.msg.addReceiver(primatelj)
-				self.myAgent.send(self.msg)
+				if self.msg.content == 'N':
+					self.myAgent.kraj = True
+				else:
+					primatelj = AID.aid(name="infopult@127.0.0.1", addresses=["xmpp://infopult@127.0.0.1"])				
+					sadrzaj = '%s,%s'% ( self.myAgent.stajaliste._actualState, self.myAgent.povratak )					
+					self.msg = ACLMessage()
+					self.msg.setPerformative('inform')
+					self.msg.setOntology('tramvaj')				
+					self.msg.setContent(sadrzaj)
+					self.msg.addReceiver(primatelj)
+					self.myAgent.send(self.msg)
 			else:
 				print "poruka nije dobivena"
 			
 
 	def _setup(self):
+		self.brojac = 0
 		self.povratak = 0
+		self.kraj = False
 
 		self.POCETNO_STAJALISTE = 'c1'
 		self.DRUGO_STAJALISTE = 'c2'
@@ -89,6 +125,7 @@ class AgentTramvaj(Agent):
 		self.PETO_STAJALISTE = 'c5'
 		self.ZAVRSNO_STAJALISTE = 7
 
+		self.PRIJELAZ_PRETPOSTAVLJENI = 0
 		self.PRIJELAZ_POCETNO_U_DRUGO = 10
 		self.PRIJELAZ_DRUGO_U_TRECE = 20
 		self.PRIJELAZ_TRECE_U_CETVRTO = 30
@@ -97,6 +134,8 @@ class AgentTramvaj(Agent):
 		self.PRIJELAZ_CETVRTO_U_TRECE = 60
 		self.PRIJELAZ_TRECE_U_DRUGO = 70
 		self.PRIJELAZ_DRUGO_U_POCETNO = 80
+
+		self.PRIJELAZ_U_ZAVRSNO = 90
 
 		p = spade.Behaviour.FSMBehaviour()
 
@@ -115,7 +154,19 @@ class AgentTramvaj(Agent):
 		p.registerTransition( self.PETO_STAJALISTE, self.CETVRTO_STAJALISTE, self.PRIJELAZ_PETO_U_CETVRTO )			
 		p.registerTransition( self.CETVRTO_STAJALISTE, self.TRECE_STAJALISTE, self.PRIJELAZ_CETVRTO_U_TRECE )			
 		p.registerTransition( self.TRECE_STAJALISTE, self.DRUGO_STAJALISTE, self.PRIJELAZ_TRECE_U_DRUGO )			
-		p.registerTransition( self.DRUGO_STAJALISTE, self.POCETNO_STAJALISTE, self.PRIJELAZ_DRUGO_U_POCETNO )			
+		p.registerTransition( self.DRUGO_STAJALISTE, self.POCETNO_STAJALISTE, self.PRIJELAZ_DRUGO_U_POCETNO )
+
+		p.registerTransition( self.POCETNO_STAJALISTE, self.POCETNO_STAJALISTE, self.PRIJELAZ_PRETPOSTAVLJENI )			
+		p.registerTransition( self.DRUGO_STAJALISTE, self.DRUGO_STAJALISTE, self.PRIJELAZ_PRETPOSTAVLJENI )
+		p.registerTransition( self.TRECE_STAJALISTE, self.TRECE_STAJALISTE, self.PRIJELAZ_PRETPOSTAVLJENI )
+		p.registerTransition( self.CETVRTO_STAJALISTE, self.CETVRTO_STAJALISTE, self.PRIJELAZ_PRETPOSTAVLJENI )
+		p.registerTransition( self.PETO_STAJALISTE, self.PETO_STAJALISTE, self.PRIJELAZ_PRETPOSTAVLJENI )
+
+		p.registerTransition( self.POCETNO_STAJALISTE, self.ZAVRSNO_STAJALISTE, self.PRIJELAZ_U_ZAVRSNO )
+		p.registerTransition( self.DRUGO_STAJALISTE, self.ZAVRSNO_STAJALISTE, self.PRIJELAZ_U_ZAVRSNO )
+		p.registerTransition( self.TRECE_STAJALISTE, self.ZAVRSNO_STAJALISTE, self.PRIJELAZ_U_ZAVRSNO )
+		p.registerTransition( self.CETVRTO_STAJALISTE, self.ZAVRSNO_STAJALISTE, self.PRIJELAZ_U_ZAVRSNO )
+		p.registerTransition( self.PETO_STAJALISTE, self.ZAVRSNO_STAJALISTE, self.PRIJELAZ_U_ZAVRSNO )			
 		
 		self.addBehaviour(p, None)
 		self.stajaliste = p			

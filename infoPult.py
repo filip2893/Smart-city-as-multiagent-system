@@ -21,13 +21,25 @@ class infoPult( BDIAgent ):
 		def _process(self):	
 			print '\nIZBORNIK'
 			print '--------'
+			print 'nesreca tramvaj[N/n]'
 			print 'karta[0]'
 			print 'dogadjaji[1]'
 			print 'put do lokacije[2]'
 			print '------------------'
-			self.izbor = raw_input("\nVas odabir: ")			
+			self.izbor = raw_input("\nVas odabir: ")
 
-			if self.izbor == '0':
+			if self.izbor == 'N' or self.izbor == 'n':
+				self.myAgent.nesreca = True
+				primatelj = AID.aid(name="tramvaj@127.0.0.1", addresses=["xmpp://tramvaj@127.0.0.1"])					
+				sadrzaj = 'N'					
+				self.msg = ACLMessage()
+				self.msg.setPerformative('inform')
+				self.msg.setOntology('infopult')				
+				self.msg.setContent(sadrzaj)
+				self.msg.addReceiver(primatelj)
+				self.myAgent.send(self.msg)		
+ 
+			elif self.izbor == '0':
 				self.myAgent.ucitajDatoteku("karta.txt")
 				print "\nVAŠA LOKACIJA: %s"%( self.myAgent.infoPultLokacija )
 
@@ -70,7 +82,7 @@ class infoPult( BDIAgent ):
 				print 'Do dogadjaja je pjesice jos: [%s min]'% (self.pjesiceUkupnoTrajanje)	
 				print 'DOLAZAK: %s:%s '% (self.dolazak.hour, self.dolazak.minute)
 				
-				if uTramvaju > 0:
+				if uTramvaju > 0 and self.myAgent.nesreca == False:
 					self.odTramvaj = 'c' + self.myAgent.infoPultLokacija[1]			
 					self.doTramvaj = 'c' + self.myAgent.lokacija[1]
 					self.polazakTramvaja = self.myAgent.vrijemeDolaskaTramvaja( self.odTramvaj,
@@ -141,6 +153,8 @@ class infoPult( BDIAgent ):
 				print "poruka nije dobivena"
 			
 	def _setup( self ):
+		self.nesreca = False
+
 		loc = 'osoba_lokacija( %s )' % (self.infoPultLokacija)
 		self.addBelieve(loc)
 
