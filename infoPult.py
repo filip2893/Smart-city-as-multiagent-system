@@ -29,6 +29,15 @@ class infoPult( BDIAgent ):
 			self.izbor = raw_input("\nVas odabir: ")
 
 			if self.izbor == 'N' or self.izbor == 'n':
+				ispravno = False
+				while ispravno == False:
+					self.loc1 = raw_input("\nRelacija nesrece_1: ")
+					self.loc2 = raw_input("\nRelacija nesrece_2: ")
+					self.loc = 'tramvaj_relacija(%s,%s)'%( self.loc1, self.loc2 )
+					ispravno = self.myAgent.askBelieve( self.loc )
+					if ispravno == False:
+						print 'VLAK VOZI NA RELACIJAMA (c1-c5)'
+
 				self.myAgent.nesreca = True
 				primatelj = AID.aid(name="tramvaj@127.0.0.1", addresses=["xmpp://tramvaj@127.0.0.1"])					
 				sadrzaj = 'N'					
@@ -37,7 +46,8 @@ class infoPult( BDIAgent ):
 				self.msg.setOntology('infopult')				
 				self.msg.setContent(sadrzaj)
 				self.msg.addReceiver(primatelj)
-				self.myAgent.send(self.msg)		
+				self.myAgent.send(self.msg)
+						
  
 			elif self.izbor == '0':
 				self.myAgent.ucitajDatoteku("karta.txt")
@@ -50,7 +60,6 @@ class infoPult( BDIAgent ):
 				ispravno = False
 				lokacija = None
 				while ispravno == False:
-					pass
 					lokacija = raw_input("\nZeljena lokacija: ")		
 					loc = 'lokacija(%s)' % (lokacija)		
 					ispravno = self.myAgent.askBelieve(loc)
@@ -68,9 +77,7 @@ class infoPult( BDIAgent ):
 				self.msg.addReceiver(primatelj)
 				self.myAgent.send(self.msg)
 
-				self.myAgent.lokacija = lokacija
-					#loc = 'zeljena_lokacija( %s )' % (self.myAgent.lokacija)
-					#self.myAgent.addBelieve(loc)			
+				self.myAgent.lokacija = lokacija			
 
 				uTramvaju = abs(int(self.myAgent.infoPultLokacija[1]) - int(self.myAgent.lokacija[1]))
 
@@ -147,8 +154,6 @@ class infoPult( BDIAgent ):
 				lista = self.msg.content.split( ',' )
 				self.myAgent.stajaliste = lista[ 0 ]
 				self.myAgent.relacija = lista[ 1 ]
-				#print self.myAgent.stajaliste
-				#print self.myAgent.relacija
 			else:
 				print "poruka nije dobivena"
 			
@@ -158,14 +163,13 @@ class infoPult( BDIAgent ):
 		loc = 'osoba_lokacija( %s )' % (self.infoPultLokacija)
 		self.addBelieve(loc)
 
-		p1 = self.glavno() 
-		self.addBehaviour(p1,None)		
-
 		self.configureKB("SWI", None, "/usr/bin/swipl")		
 		self.znanje = self.ucitajZnanje('lokacija.pl')
 		for z in self.znanje:
-			#print z
 			self.addBelieve( z )
+
+		p1 = self.glavno() 
+		self.addBehaviour(p1,None)
 		#bel = self.askBelieve( 'tramvaj_relacija(a1,d4)' )
 		#print bel
 
