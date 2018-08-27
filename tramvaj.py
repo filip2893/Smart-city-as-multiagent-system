@@ -22,6 +22,7 @@ class AgentTramvaj(Agent):
 				self._exitcode = self.myAgent.PRIJELAZ_PRETPOSTAVLJENI
 			elif self.myAgent.kraj == False:
 				self.myAgent.brojac = 0
+				self.myAgent.povratak = 0
 				self._exitcode = self.myAgent.PRIJELAZ_POCETNO_U_DRUGO
 				
 

@@ -82,16 +82,18 @@ class infoPult( BDIAgent ):
 				uTramvaju = abs(int(self.myAgent.infoPultLokacija[1]) - int(self.myAgent.lokacija[1]))
 
 				self.pjesiceUkupnoTrajanje = self.myAgent.putDoLokacije( self.myAgent.infoPultLokacija, self.myAgent.lokacija )
-				self.dolazak = datetime.now() + timedelta( minutes = self.pjesiceUkupnoTrajanje )	
-
+				self.dolazak = datetime.now() + timedelta( minutes = self.pjesiceUkupnoTrajanje )
+				self.min = '0%i'%(self.dolazak.minute) if self.dolazak.minute < 10 else self.dolazak.minute
+				
 				print '\nUPUTE DO LOKACIJE: %s <PJESICE>'% ( self.myAgent.lokacija )
 				print '-------------------------------'
 				print 'Do dogadjaja je pjesice jos: [%s min]'% (self.pjesiceUkupnoTrajanje)	
-				print 'DOLAZAK: %s:%s '% (self.dolazak.hour, self.dolazak.minute)
+				print 'DOLAZAK: %s:%s '% (self.dolazak.hour, self.min)
 				
 				if uTramvaju > 0 and self.myAgent.nesreca == False:
 					self.odTramvaj = 'c' + self.myAgent.infoPultLokacija[1]			
 					self.doTramvaj = 'c' + self.myAgent.lokacija[1]
+
 					self.polazakTramvaja = self.myAgent.vrijemeDolaskaTramvaja( self.odTramvaj,
 																self.myAgent.stajaliste, 
 																self.myAgent.relacija )
@@ -122,7 +124,8 @@ class infoPult( BDIAgent ):
 					
 					self._polazakTramvaja = datetime.now() + timedelta( minutes = self.polazakTramvaja )
 					self.dolazak = datetime.now() + timedelta( minutes = self.tramvajUkupnoTrajanje )
-
+					self.min = '0%i'%(self.dolazak.minute) if self.dolazak.minute < 10 else self.dolazak.minute
+				
 					print '\nUPUTE DO LOKACIJE: %s <TRAMVAJ>'% (self.myAgent.lokacija)
 					print '-------------------------------'
 					print '#TRENUTNO stajaliste tramvaja: %s'% (self.myAgent.stajaliste)
@@ -132,7 +135,7 @@ class infoPult( BDIAgent ):
 					print 'Putovanje tramvajem: [%s min]'% (self.uTramvaju)
 					print 'Do dogadjaja je pjesice jos: [%s min]'% (self.tramvajPjesice)	
 					print 'Ukupno trajanje putovanja: [%s min]'%(self.tramvajUkupnoTrajanje)
-					print 'DOLAZAK NA ZELJENU LOKACIJU: %s:%s '% (self.dolazak.hour, self.dolazak.minute)
+					print 'DOLAZAK NA ZELJENU LOKACIJU: %s:%s '% (self.dolazak.hour, self.min)
 
 			else: print 'KRIVI UNOS\n'
 	
@@ -170,8 +173,6 @@ class infoPult( BDIAgent ):
 
 		p1 = self.glavno() 
 		self.addBehaviour(p1,None)
-		#bel = self.askBelieve( 'tramvaj_relacija(a1,d4)' )
-		#print bel
 
 		template = ACLTemplate()
 		template.setOntology('dogadjaj')
@@ -207,14 +208,26 @@ class infoPult( BDIAgent ):
 
 		brojac = 0
 
-		with open( datoteka, 'r') as f:
-				for red in f:
-					brojac += 1
-					red = red.strip()				
-					print red
-					if brojac == 6:
+		dogadjaji = dict()
+
+		with open( datoteka, 'r') as f:					
+			for red in f:
+				brojac += 1
+				red = red.strip()
+				lista = red.split( '=' )				
+				dogadjaji.update({lista[ 0 ]: lista[ 1 ]})
+				if brojac == 6:
+					dogadjaji['pocetak'] = datetime.strptime(dogadjaji['pocetak'], '%Y-%m-%d %H:%M:%S')
+					dogadjaji['kraj'] = datetime.strptime(dogadjaji['kraj'], '%Y-%m-%d %H:%M:%S')
+					kraj = True if dogadjaji['kraj'] > datetime.now() else False
+					dogadjaji['pocetak'] = dogadjaji['pocetak'].strftime('%d.%m.%Y u %H:%M:%S')
+					dogadjaji['kraj'] = dogadjaji['kraj'].strftime('%d.%m.%Y u %H:%M:%S')
+					if  kraj:
 						print "---------------"
-						brojac = 0
+						for key, value in dogadjaji.iteritems():
+							print '%s:%s'% (key,value)
+					brojac = 0
+		 
 
 	def vrijemeDolaskaTramvaja(self, stajaliste, dolazak, relacija):		
 		op_index = ops["+"]
@@ -222,16 +235,15 @@ class infoPult( BDIAgent ):
 			op_index = ops["-"]
 
 		trajanje = 0
-
 		while stajaliste != dolazak:			
 			index = op_index( int( dolazak[1]), 1 ) 
 			dolazak = dolazak[0] + str(index)
-			#print dolazak
 			trajanje += 1
 			if index == 5:
 				op_index = ops["-"]
 			elif index == 1:
 				op_index = ops["+"]
+
 		return trajanje
 
 	def putDoLokacije(self, od, do):
