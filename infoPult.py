@@ -33,8 +33,9 @@ class infoPult( BDIAgent ):
 				while ispravno == False:
 					self.loc1 = raw_input("\nRelacija nesrece_1: ")
 					self.loc2 = raw_input("\nRelacija nesrece_2: ")
-					self.loc = 'tramvaj_relacija(%s,%s)'%( self.loc1, self.loc2 )
-					ispravno = self.myAgent.askBelieve( self.loc )
+					if self.loc1[0] == 'c' and self.loc2[0] == 'c' :
+						self.loc = 'tramvaj_relacija(%s,%s)'%( self.loc1, self.loc2 )
+						ispravno = self.myAgent.askBelieve( self.loc )
 					if ispravno == False:
 						print 'VLAK VOZI NA RELACIJAMA (c1-c5)'
 
@@ -214,8 +215,11 @@ class infoPult( BDIAgent ):
 			for red in f:
 				brojac += 1
 				red = red.strip()
-				lista = red.split( '=' )				
-				dogadjaji.update({lista[ 0 ]: lista[ 1 ]})
+				if datoteka == "dogadjaji.txt":
+					lista = red.split( '=' )				
+					dogadjaji.update({lista[ 0 ]: lista[ 1 ]})
+				elif datoteka == "karta.txt":
+					print red
 				if brojac == 6:
 					dogadjaji['pocetak'] = datetime.strptime(dogadjaji['pocetak'], '%Y-%m-%d %H:%M:%S')
 					dogadjaji['kraj'] = datetime.strptime(dogadjaji['kraj'], '%Y-%m-%d %H:%M:%S')
