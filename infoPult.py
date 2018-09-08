@@ -164,9 +164,6 @@ class infoPult( BDIAgent ):
 	def _setup( self ):
 		self.nesreca = False
 
-		loc = 'osoba_lokacija( %s )' % (self.infoPultLokacija)
-		self.addBelieve(loc)
-
 		self.configureKB("SWI", None, "/usr/bin/swipl")		
 		self.znanje = self.ucitajZnanje('lokacija.pl')
 		for z in self.znanje:

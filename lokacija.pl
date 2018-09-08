@@ -31,5 +31,5 @@ tramvaj(c5,c4).
 tramvaj(c4,c3).
 tramvaj(c3,c2).
 tramvaj(c2,c1).
-(tramvaj_relacija(X,Y) :- tramvaj(X,Y)).
-(tramvaj_relacija(X,Y) :- tramvaj(X,Z), tramvaj_relacija(Z,Y)).
+(tramvaj_relacija(_X,_Y) :- tramvaj(_X,_Y), !).
+(tramvaj_relacija(_X,_Y) :- tramvaj(_X,_Z), tramvaj_relacija(_Z,_Y), !).
