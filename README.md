@@ -1,5 +1,5 @@
 # Smart-city-as-multiagent-system
- Master's thesis on college *Faculty of organisation and informatics in Varaždin*. 
+ Master's thesis on college *Faculty of Organization and Informatics in Varaždin*. 
  
  # Requirements:
   - Pyhon >= 2.7
